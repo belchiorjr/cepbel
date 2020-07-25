@@ -50,22 +50,23 @@ class CepController extends Controller
         if ($response = Http::get(env('WS_CEP').request()->cep.'/json')) {
 
             if ($viaCep = json_decode($response->body(), 1)) {
-                $cep = new CEP($viaCep);
-                $cep->cep = preg_replace("/\D/", "", $viaCep['cep']);
+                if (!$viaCep['erro']) {
+
+                    $cep = new CEP($viaCep);
+                    $cep->cep = preg_replace("/\D/", "", $viaCep['cep']);
+
+                    if (!$cep->unidade)
+                        unset($cep->unidade);
                 
+                    if (!$cep->gia)
+                        unset($cep->gia);
 
-
-                if (!$cep->unidade)
-                    unset($cep->unidade);
-                
-                if (!$cep->gia)
-                    unset($cep->gia);
-
-                if (!$cep->ibge)
-                    unset($cep->ibge);
+                    if (!$cep->ibge)
+                        unset($cep->ibge);
     
-                if ($cep->save()) {
-                    return redirect('visualizar/'.$cep->id);
+                    if ($cep->save()) {
+                        return redirect('visualizar/'.$cep->id);
+                    }
                 }
             }
         }

@@ -13,6 +13,13 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
+// Grupo de Rotas Relacionadas com CEP
+Route::prefix("/")->group(function() {
+    Route::get('/', 'CepController@inicio');
+    Route::post('/pesquisar', 'CepController@pesquisar');
+    Route::get('/visualizar/{cep}', 'CepController@visualizar');
+    Route::get('/editar/{cep}', 'CepController@editar');
+    Route::get('/mensagem/{mensagem}', 'CepController@mensagem');
+    Route::post('/atualizar/{cep}', 'CepController@atualizar');
+    Route::get('/deletar/{cep}', 'CepController@deletar');
 });

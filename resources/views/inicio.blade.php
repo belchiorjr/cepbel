@@ -1,4 +1,4 @@
-<h1>BUSCA</h1>
+<h1>PESQUISAR CEP</h1>
 
 <form method="post" action="{{ url('/pesquisar')}}" >
         

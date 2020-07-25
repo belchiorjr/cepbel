@@ -30,7 +30,7 @@ class PesquisarRequest extends FormRequest
 
 
     /**
-     * Mensagens personalizadas 
+     * Mensagens personalizada para regra
      *
      * @return array
      */

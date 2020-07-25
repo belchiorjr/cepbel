@@ -5,17 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use App\Http\Utils\Validar;
+use App\Http\Utils\SetParams;
+use Illuminate\Support\Carbon;
+use App\CEP;
 
 class CepController extends Controller
 {
-
-    //     Route::get('/', 'CepController@index');
-    // Route::post('/buscar', 'CepController@buscar');
-    // Route::get('/visualizar/{cep}', 'CepController@visualizar');
-    // Route::get('/editar/{cep}', 'CepController@editar');
-    // Route::post('/atualizar/{cep}', 'CepController@atualizar');
-    // Route::post('/deletar/{cep}', 'CepController@deletar');
-
 
     /**
     * Apresenta o formulário de pesquisa.
@@ -37,64 +32,45 @@ class CepController extends Controller
     */
     public function pesquisar() {
 
-        // Limpa textos da pesquisa mantendo somente números
-        $cepClean = preg_replace("/\D/", "", request()->cep);
-        request()->merge(['cep' => $cepClean]);
-
+        // Trata o parametro de cep enviado na busca
+        $_cep = preg_replace("/\D/", "", request()->cep);
+        request()->merge(['cep' => $_cep]);
 
         // Dados inválidos?
         if ($erros = Validar::invalido(new \App\Http\Requests\PesquisarRequest)) {
-
-            
-            return view('mensagem', [ 'mss' => 'Dados Inválidos PersonalLocalization', 'erros' => $erros, 'voltar' => true]);
+            return view('mensagem', [ 'mss' => 'Dados Inválidos para pesquisa.', 'erros' => $erros, 'voltar' => true]);
         }
 
+        // Cep encontrado em nossa base?
+        if ($cep = CEP::where('cep', request()->cep)->first()) {
+            return redirect('visualizar/'.$cep->id);
+        }
+
+        // Realiza uma chamada para web-service viacep
+        if ($response = Http::get(env('WS_CEP').request()->cep.'/json')) {
+
+            if ($viaCep = json_decode($response->body(), 1)) {
+                $cep = new CEP($viaCep);
+                $cep->cep = preg_replace("/\D/", "", $viaCep['cep']);
+                
 
 
-        dd(request()->cep);
+                if (!$cep->unidade)
+                    unset($cep->unidade);
+                
+                if (!$cep->gia)
+                    unset($cep->gia);
 
-
-        // if ($errors = Validate(new PersonalLocalizationStoreRequest())) 
-        //     return view('personal::personal_localization_error', [ 'mss' => 'Dados Inválidos PersonalLocalization', 'errors' => $errors, 'invalid' => true]);
-
-        // if ($user = Auth::user()) {
-        //     request()->merge(['user_id' => $user->id]);
-        // }
+                if (!$cep->ibge)
+                    unset($cep->ibge);
+    
+                if ($cep->save()) {
+                    return redirect('visualizar/'.$cep->id);
+                }
+            }
+        }
         
-        // $cepService = new CepService();
-        // $cep = $cepService->getData();
-
-        // if (isset($viaCep['erro']) && $viaCep['erro']) {
-        //     $response = Http::get('http://viacep.com.br/ws/'.request()->cep.'/json');
-        //     $viaCep = json_decode($response->body(), 1);
-         
-        //     if (!$viaCep || (isset($viaCep['erro']) && $viaCep['erro'])) {
-        //         return view('personal::personal_localization_error', ['mss' => 'Não foi possível localizar o CEP.', 'invalid' => true]);    
-        //     }
-
-        //     $viaCep['cep'] = preg_replace("/\D/", "", $viaCep['cep']);
-
-        //     request()->merge(['via_cep' => $viaCep]);
-
-        //     $cep = $cepService->store();
-        // }
-
-        // if (is_array($cep))
-        //     $cep = reset($cep);
-
-
-        // request()->merge(['cep_id' => $cep->id]);
-
-        // if ($personal_localization = $this->personal_localization_service->store()) {
-        //     return view('personal::personal_localization_success', [ 'mss' => 'Cadastrado com sucesso', 'personal_localization' => $personal_localization]);
-        // }
-
-        // return view('personal::personal_localization_error', [ 'mss' => 'Falha ao Cadastrar PersonalLocalization']);
-
-
-        
-        return redirect('visualizar/'.request()->cep);
-
+        return view('mensagem', [ 'mss' => 'Cep não encontrado em nossas bases de dados.', 'voltar' => true]);
     }
 
 
@@ -103,9 +79,18 @@ class CepController extends Controller
     * 
     * @return view()
     */
-    public function visualizar($cep) {
+    public function visualizar($cep_id) {
 
-         return view('visualizar', ['cep' => $cep]);
+        if ($cep_id = preg_replace("/\D/", "", $cep_id)) {
+           
+            $cep = Cep::find($cep_id);
+            $cep->incluido_em = Carbon::parse($cep->dta_inc)->format('d/m/Y H:i:s');
+            $cep->alterado_em = Carbon::parse($cep->dta_upd)->format('d/m/Y H:i:s');
+           
+            return view('visualizar', ['cep' => $cep]);   
+        }
+
+        return view('mensagem', [ 'mss' => 'Cep não encontrado em nossas bases de dados.', 'voltar' => true]);
     }
 
 
@@ -115,9 +100,18 @@ class CepController extends Controller
     * 
     * @return view()
     */
-    public function editar($cep) {
+    public function editar($cep_id) {
 
-         return view('editar',  ['cep' => $cep]);
+        if ($cep_id = preg_replace("/\D/", "", $cep_id)) {
+           
+            $cep = Cep::find($cep_id);
+            $cep->incluido_em = Carbon::parse($cep->dta_inc)->format('d/m/Y H:i:s');
+            $cep->alterado_em = Carbon::parse($cep->dta_upd)->format('d/m/Y H:i:s');
+            
+            return view('editar', ['cep' => $cep]);   
+        }
+
+        return view('mensagem', [ 'mss' => 'Cep não encontrado em nossas bases de dados.', 'voltar' => true]);
     }
 
 
@@ -127,22 +121,49 @@ class CepController extends Controller
     * 
     * @return view()
     */
-    public function atualizar($cep) {
+    public function atualizar($cep_id) {
 
-        
-        return view('visualizar', ['cep' => $cep]);
+        if ($cep_id = preg_replace("/\D/", "", $cep_id)) {
+           
+            if ($cep = Cep::find($cep_id)) {
+           
+                // Dados inválidos?
+                if ($erros = Validar::invalido(new \App\Http\Requests\AtualizarRequest)) {
+                    return view('mensagem', [ 'mss' => 'Verifique os dados informados.', 'erros' => $erros, 'voltar' => true]);
+                }
+
+                if (SetParams::set($cep)) {
+                    
+                    if ($cep->save()) {
+                        return redirect('visualizar/'.$cep->id);
+                    }
+
+                    return view('mensagem', [ 'mss' => 'Cep não encontrado em nossas bases de dados.', 'voltar' => true]);
+                }
+            }
+        }
+
+        return view('mensagem', [ 'mss' => 'Cep não encontrado em nossas bases de dados.', 'voltar' => true]);
     }
 
 
     /**
-    * Deleta os dados do CEP
+    * Remove os dados do CEP da base de dados da aplicação.
     * 
     * @return view()
     */
-    public function deletar($cep) {
+    public function deletar($cep_id) {
 
-        return redirect('mensagem/'.request()->cep);
+        if ($cep_id = preg_replace("/\D/", "", $cep_id)) {
+           
+            $cep = Cep::find($cep_id);
+        
+            if ($cep->delete()) {
+                return view('mensagem', [ 'mss' => 'Cep '.$cep->cep.' foi removido com sucesso da nossa base de dados.']);
+            }
+        }
+
+        return view('mensagem', [ 'mss' => 'Não possivel remover o Cep '.$cep->cep. ' de nossa base de dados.']);
     }
-
 
 }

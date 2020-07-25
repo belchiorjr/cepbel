@@ -7,24 +7,44 @@ use Illuminate\Foundation\Http\FormRequest;
 class AtualizarRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Permissão total
      *
      * @return bool
      */
     public function authorize()
     {
-        return false;
+        return true;
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Regras de validações para editar os dados do cep
      *
      * @return array
      */
     public function rules()
     {
         return [
-            //
+            "logradouro" => 'required',
+            "bairro" => 'required',
+            "localidade" => 'required',
+            "uf" => 'required'
+        ];
+    }
+
+
+
+    /**
+    * Mensagens de erros personalizadas
+    *
+    * @return array
+    */
+    public function messages()
+    {
+        return [
+            "logradouro.required" => 'Informe um logradouro.',
+            "bairro.required" => 'Informe um bairro.',
+            "localidade.required" => 'Informe uma localidade.',
+            "uf.required" =>  'Informe uma Unidade de Federação'
         ];
     }
 }

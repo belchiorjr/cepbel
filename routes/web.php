@@ -17,9 +17,8 @@ use Illuminate\Support\Facades\Route;
 Route::prefix("/")->group(function() {
     Route::get('/', 'CepController@inicio');
     Route::post('/pesquisar', 'CepController@pesquisar');
-    Route::get('/visualizar/{cep}', 'CepController@visualizar');
-    Route::get('/editar/{cep}', 'CepController@editar');
-    Route::get('/mensagem/{mensagem}', 'CepController@mensagem');
-    Route::post('/atualizar/{cep}', 'CepController@atualizar');
-    Route::get('/deletar/{cep}', 'CepController@deletar');
+    Route::get('/visualizar/{cep_id}', 'CepController@visualizar');
+    Route::get('/editar/{cep_id}', 'CepController@editar');
+    Route::post('/atualizar/{cep_id}', 'CepController@atualizar');
+    Route::get('/deletar/{cep_id}', 'CepController@deletar');
 });
